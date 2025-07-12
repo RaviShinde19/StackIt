@@ -1,153 +1,153 @@
-import React, { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { 
   MagnifyingGlassIcon, 
   PlusIcon, 
   ChevronDownIcon,
   ChevronLeftIcon,
   ChevronRightIcon,
-  UserIcon,
-  Bars3Icon,
-  XMarkIcon,
   AdjustmentsHorizontalIcon
-} from '@heroicons/react/24/outline'
+} from '@heroicons/react/24/outline';
 
 const Dashboard = () => {
-  const [questions, setQuestions] = useState([])
-  const [searchTerm, setSearchTerm] = useState('')
-  const [sortBy, setSortBy] = useState('newest')
-  const [filterBy, setFilterBy] = useState('all')
-  const [currentPage, setCurrentPage] = useState(1)
-  const [showMoreDropdown, setShowMoreDropdown] = useState(false)
-  const [showMobileFilters, setShowMobileFilters] = useState(false)
-  const questionsPerPage = 10
-
-  // Mock data for demonstration
-  const mockQuestions = [
-    {
-      id: 1,
-      title: "How to implement authentication in React with JWT?",
-      content: "I'm building a React application and need to implement JWT authentication. What's the best approach for handling tokens, refresh tokens, and protecting routes?",
-      author: "john_doe",
-      avatar: "JD",
-      answers: 3,
-      tags: ["React", "JWT", "Authentication"],
-      createdAt: "2024-01-15T10:30:00Z",
-      isAnswered: true,
-      votes: 15,
-      views: 234
-    },
-    {
-      id: 2,
-      title: "MongoDB vs PostgreSQL for a new project",
-      content: "I'm starting a new web application and can't decide between MongoDB and PostgreSQL. What are the pros and cons of each for a modern web app?",
-      author: "sarah_dev",
-      avatar: "SD",
-      answers: 5,
-      tags: ["MongoDB", "PostgreSQL", "Database"],
-      createdAt: "2024-01-14T15:45:00Z",
-      isAnswered: false,
-      votes: 8,
-      views: 156
-    },
-    {
-      id: 3,
-      title: "Best practices for REST API design",
-      content: "What are the essential best practices when designing RESTful APIs? I'm looking for guidance on URL structure, HTTP methods, and response formats.",
-      author: "mike_backend",
-      avatar: "MB",
-      answers: 7,
-      tags: ["API", "REST", "Backend"],
-      createdAt: "2024-01-13T09:20:00Z",
-      isAnswered: true,
-      votes: 22,
-      views: 445
-    },
-    {
-      id: 4,
-      title: "How to optimize React app performance?",
-      content: "My React application is becoming slow as it grows. What are the best techniques for optimizing performance, especially for large component trees?",
-      author: "react_dev",
-      avatar: "RD",
-      answers: 4,
-      tags: ["React", "Performance", "Optimization"],
-      createdAt: "2024-01-12T14:10:00Z",
-      isAnswered: false,
-      votes: 12,
-      views: 189
-    },
-    {
-      id: 5,
-      title: "Understanding Docker containers and deployment",
-      content: "I'm new to Docker and containerization. Can someone explain the basics and how to deploy a web application using Docker?",
-      author: "devops_newbie",
-      avatar: "DN",
-      answers: 6,
-      tags: ["Docker", "DevOps", "Deployment"],
-      createdAt: "2024-01-11T11:35:00Z",
-      isAnswered: true,
-      votes: 18,
-      views: 321
-    }
-  ]
+  const [questions, setQuestions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('newest');
+  const [filterBy, setFilterBy] = useState('all');
+  const [currentPage, setCurrentPage] = useState(1);
+  const [showMoreDropdown, setShowMoreDropdown] = useState(false);
+  const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const questionsPerPage = 10;
 
   useEffect(() => {
-    setQuestions(mockQuestions)
-  }, [])
+  const token = localStorage.getItem("accessToken"); // or sessionStorage.getItem()
+  if (token) {
+    setIsLoggedIn(true);
+  }
+}, []);
+
+  useEffect(() => {
+    const fetchQuestions = async () => {
+      try {
+        setLoading(true);
+        const response = await fetch('http://localhost:8000/api/v1/questions/getQuestions');
+        
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        
+        const result = await response.json();
+        
+        // Handle the specific response format you provided
+        if (result.success && Array.isArray(result.data)) {
+          setQuestions(result.data);
+        } else {
+          throw new Error('API response format not recognized');
+        }
+        
+      } catch (err) {
+        console.error('Error fetching questions:', err);
+        setError(err.message);
+        setQuestions([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchQuestions();
+  }, []);
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (showMoreDropdown && !event.target.closest('.dropdown-container')) {
-        setShowMoreDropdown(false)
+        setShowMoreDropdown(false);
       }
-    }
-    document.addEventListener('click', handleClickOutside)
-    return () => document.removeEventListener('click', handleClickOutside)
-  }, [showMoreDropdown])
+    };
+    
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, [showMoreDropdown]);
 
+  // Filter questions based on search term and filter type
   const filteredQuestions = questions.filter(question => {
-    const matchesSearch = question.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         question.content.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         question.tags.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()))
+    const matchesSearch = 
+      question.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      question.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      question.tags?.some(tag => tag.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesFilter = filterBy === 'all' || 
-                         (filterBy === 'answered' && question.isAnswered) ||
-                         (filterBy === 'unanswered' && !question.isAnswered)
+    const matchesFilter = 
+      filterBy === 'all' || 
+      (filterBy === 'answered' && question.answers?.length > 0) ||
+      (filterBy === 'unanswered' && (!question.answers || question.answers.length === 0));
     
-    return matchesSearch && matchesFilter
-  })
+    return matchesSearch && matchesFilter;
+  });
 
+  // Sort questions based on selected option
   const sortedQuestions = [...filteredQuestions].sort((a, b) => {
     switch (sortBy) {
       case 'newest':
-        return new Date(b.createdAt) - new Date(a.createdAt)
+        return new Date(b.createdAt) - new Date(a.createdAt);
       case 'oldest':
-        return new Date(a.createdAt) - new Date(b.createdAt)
+        return new Date(a.createdAt) - new Date(b.createdAt);
       case 'votes':
-        return b.votes - a.votes
+        return (b.upvotes || 0) - (a.upvotes || 0);
       case 'views':
-        return b.views - a.views
+        return (b.views || 0) - (a.views || 0);
       default:
-        return 0
+        return 0;
     }
-  })
+  });
 
-  const totalPages = Math.ceil(sortedQuestions.length / questionsPerPage)
+  // Pagination calculations
+  const totalPages = Math.ceil(sortedQuestions.length / questionsPerPage);
   const paginatedQuestions = sortedQuestions.slice(
     (currentPage - 1) * questionsPerPage,
     currentPage * questionsPerPage
-  )
+  );
 
+  // Format date for display
   const formatDate = (dateString) => {
-    const date = new Date(dateString)
-    const now = new Date()
-    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60))
+    if (!dateString) return 'Unknown date';
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInHours = Math.floor((now - date) / (1000 * 60 * 60));
     
-    if (diffInHours < 1) return 'Just now'
-    if (diffInHours < 24) return `${diffInHours}h ago`
-    if (diffInHours < 48) return 'Yesterday'
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+    if (diffInHours < 1) return 'Just now';
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInHours < 48) return 'Yesterday';
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-4 text-gray-600">Loading questions...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center text-red-500">
+          <p>Error loading questions: {error}</p>
+          <button 
+            onClick={() => window.location.reload()}
+            className="mt-4 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -162,12 +162,14 @@ const Dashboard = () => {
             </Link>
 
             {/* Login Button */}
-            <Link
-              to="/login"
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg"
-            >
-              Login
-            </Link>
+            {!isLoggedIn && (
+              <Link
+                to="/login"
+                    className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg"
+                >
+                Login
+              </Link>
+            )}
           </div>
         </div>
       </header>
@@ -272,8 +274,8 @@ const Dashboard = () => {
                     <div className="py-2">
                       <button
                         onClick={() => {
-                          setSortBy('newest')
-                          setShowMoreDropdown(false)
+                          setSortBy('newest');
+                          setShowMoreDropdown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                       >
@@ -281,8 +283,8 @@ const Dashboard = () => {
                       </button>
                       <button
                         onClick={() => {
-                          setSortBy('oldest')
-                          setShowMoreDropdown(false)
+                          setSortBy('oldest');
+                          setShowMoreDropdown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                       >
@@ -290,8 +292,8 @@ const Dashboard = () => {
                       </button>
                       <button
                         onClick={() => {
-                          setSortBy('votes')
-                          setShowMoreDropdown(false)
+                          setSortBy('votes');
+                          setShowMoreDropdown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                       >
@@ -299,8 +301,8 @@ const Dashboard = () => {
                       </button>
                       <button
                         onClick={() => {
-                          setSortBy('views')
-                          setShowMoreDropdown(false)
+                          setSortBy('views');
+                          setShowMoreDropdown(false);
                         }}
                         className="block w-full text-left px-4 py-2 text-gray-700 hover:bg-gray-50 transition-colors"
                       >
@@ -330,54 +332,70 @@ const Dashboard = () => {
 
         {/* Questions List */}
         <div className="space-y-4">
-          {paginatedQuestions.map((question) => (
-            <div key={question.id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
-              <div className="flex flex-col md:flex-row md:items-start gap-4">
-                {/* Question Content */}
-                <div className="flex-1">
-                  <Link 
-                    to={`/question/${question.id}`}
-                    className="block group"
-                  >
-                    <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
-                      {question.title}
-                    </h3>
-                  </Link>
-                  <p className="text-gray-600 mb-4 line-clamp-3">{question.content}</p>
-                  
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mb-4">
-                    {question.tags.map((tag, index) => (
-                      <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                        {tag}
-                      </span>
-                    ))}
-                  </div>
-                  
-                  {/* Meta Information */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">
-                          {question.avatar}
-                        </div>
-                        {question.author}
-                      </span>
-                      <span>{formatDate(question.createdAt)}</span>
-                    </div>
+          {paginatedQuestions.length > 0 ? (
+            paginatedQuestions.map((question) => (
+              <div key={question._id} className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 hover:shadow-md transition-shadow duration-200">
+                <div className="flex flex-col md:flex-row md:items-start gap-4">
+                  {/* Question Content */}
+                  <div className="flex-1">
+                    <Link 
+                      to={`/question/${question._id}`}
+                      className="block group"
+                    >
+                      <h3 className="text-lg font-semibold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors line-clamp-2">
+                        {question.title}
+                      </h3>
+                    </Link>
+                    <div 
+                      className="text-gray-600 mb-4 line-clamp-3 prose prose-sm" 
+                      dangerouslySetInnerHTML={{ __html: question.description }} 
+                    />
                     
-                    <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span className={`${question.isAnswered ? 'text-green-600' : 'text-gray-500'}`}>
-                        {question.answers} answer{question.answers !== 1 ? 's' : ''}
-                      </span>
-                      <span>{question.votes} votes</span>
-                      <span>{question.views} views</span>
+                    {/* Tags */}
+                    {question.tags && question.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-2 mb-4">
+                        {question.tags.map((tag, index) => (
+                          <span key={index} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                    
+                    {/* Meta Information */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span className="flex items-center gap-1">
+                          <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center text-white text-xs font-medium">
+                            {question.askedBy?.username?.charAt(0) || 'U'}
+                          </div>
+                          {question.askedBy?.username || 'Unknown'}
+                        </span>
+                        <span>{formatDate(question.createdAt)}</span>
+                      </div>
+                      
+                      <div className="flex items-center gap-4 text-sm text-gray-500">
+                        <span className={(question.answers?.length > 0 ? 'text-green-600' : 'text-gray-500')}>
+                          {question.answers?.length || 0} answer{question.answers?.length !== 1 ? 's' : ''}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
+            ))
+          ) : (
+            <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200 text-center">
+              <p className="text-gray-600">No questions found. Be the first to ask one!</p>
+              <Link 
+                to="/ask" 
+                className="mt-4 inline-flex items-center bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200"
+              >
+                <PlusIcon className="w-5 h-5 mr-2" />
+                Ask a Question
+              </Link>
             </div>
-          ))}
+          )}
         </div>
 
         {/* Pagination */}
@@ -416,7 +434,7 @@ const Dashboard = () => {
         )}
       </main>
     </div>
-  )
-}
+  );
+};
 
-export default Dashboard
+export default Dashboard;
