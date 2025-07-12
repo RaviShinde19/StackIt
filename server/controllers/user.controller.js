@@ -4,6 +4,7 @@ import { User } from "../models/user.models.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
 import axios from 'axios';
+import { uploadOnCloudinary } from "../utils/cloudinary.js";
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
@@ -24,7 +25,9 @@ const generateAccessAndRefreshTokens = async(userId) => {
 const registerUser = asyncHandler(async (req,res) => {
     const { firstname, lastname, username, email, password, phone, isTermsAccepted } = req.body;
 
-    if (!firstname || !lastname || !username || !email || !password || !phone || isTermsAccepted !== true) {
+    const isTermsAcceptedBool = isTermsAccepted === "true";
+
+    if (!firstname || !lastname || !username || !email || !password || !phone || !isTermsAcceptedBool) {
         throw new ApiError(400, "All fields and terms acceptance are required");
     }
 
@@ -38,7 +41,7 @@ const registerUser = asyncHandler(async (req,res) => {
         profilePicUrl = cloudinaryResult.secure_url;
     }
 
-    const newuser = await User.create({
+const newuser = await User.create({
         firstname,
         lastname,
         username,
@@ -46,7 +49,7 @@ const registerUser = asyncHandler(async (req,res) => {
         password,
         phone,
         profilePicUrl,
-        isTermsAccepted,
+        isTermsAccepted: isTermsAcceptedBool,
     });
 
     const cleanUser = await User.findById(newuser._id).select("-password -refreshToken");
@@ -103,5 +106,5 @@ const logoutUser = asyncHandler(async(req,res)=>{
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser
 }
