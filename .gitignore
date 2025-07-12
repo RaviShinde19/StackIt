@@ -5,12 +5,9 @@ node_modules/
 logs
 *.log
 npm-debug.log*
-<<<<<<< HEAD
-=======
 yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
->>>>>>> 98d64a00c45279939b2dd993f31b0a1caa4e2802
 
 # Dependency directories
 jspm_packages/
@@ -20,8 +17,6 @@ jspm_packages/
 
 # Environment files
 .env
-<<<<<<< HEAD
-=======
 .env.local
 .env.development.local
 .env.test.local
@@ -37,13 +32,10 @@ build/
 *.swp
 *.swo
 *~
->>>>>>> 98d64a00c45279939b2dd993f31b0a1caa4e2802
 
 # OS-specific files
 .DS_Store
 Thumbs.db
-<<<<<<< HEAD
-=======
 
 # Vite
 .vite/
@@ -54,4 +46,3 @@ coverage/
 # Temporary folders
 tmp/
 temp/
->>>>>>> 98d64a00c45279939b2dd993f31b0a1caa4e2802
