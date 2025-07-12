@@ -1,1 +1,1 @@
-export const DB_NAME = "StackIt"
+import mongoose, { Schema } from "mongoose";
