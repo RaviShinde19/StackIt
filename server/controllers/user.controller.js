@@ -22,12 +22,18 @@ const generateAccessAndRefreshTokens = async(userId) => {
     }
 }
 
-const registerUser = asyncHandler(async (req,res) => {
-    const { firstname, lastname, username, email, password, phone, isTermsAccepted } = req.body;
+const registerUser = asyncHandler(async (req, res) => {
+    const { firstname, lastname, username, email, password, phone } = req.body;
+    console.log('Received data:', {
+        ...req.body,
+        isTermsAccepted: req.body.isTermsAccepted,
+        file: req.file ? true : false
+    });
+    
+    // Handle isTermsAccepted properly
+    const isTermsAccepted = req.body.isTermsAccepted === "true" || req.body.isTermsAccepted === true;
 
-    const isTermsAcceptedBool = isTermsAccepted === "true";
-
-    if (!firstname || !lastname || !username || !email || !password || !phone || !isTermsAcceptedBool) {
+    if (!firstname || !lastname || !username || !email || !password || !phone || !isTermsAccepted) {
         throw new ApiError(400, "All fields and terms acceptance are required");
     }
 
@@ -41,7 +47,7 @@ const registerUser = asyncHandler(async (req,res) => {
         profilePicUrl = cloudinaryResult.secure_url;
     }
 
-const newuser = await User.create({
+    const newuser = await User.create({
         firstname,
         lastname,
         username,
@@ -49,13 +55,13 @@ const newuser = await User.create({
         password,
         phone,
         profilePicUrl,
-        isTermsAccepted: isTermsAcceptedBool,
+        isTermsAccepted,
     });
 
     const cleanUser = await User.findById(newuser._id).select("-password -refreshToken");
 
     res.status(201).json(new ApiResponse(201, cleanUser, "User registered"));
-})
+});
 
 const loginUser = asyncHandler(async (req, res) => {
   const { username, password } = req.body;
@@ -68,13 +74,29 @@ const loginUser = asyncHandler(async (req, res) => {
   if (!isValid) throw new ApiError(401, "Invalid password");
 
   const { accessToken, refreshToken } = await generateAccessAndRefreshTokens(user._id);
+  console.log(accessToken)
+  console.log(refreshToken)
   const userData = await User.findById(user._id).select("-password -refreshToken");
 
-  res.status(200).json(new ApiResponse(200, {
-    user: userData,
-    accessToken,
-    refreshToken,
-  }, "Login successful"));
+  const cookieOptions = {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+    maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+  };
+
+  res
+    .status(200)
+    .cookie("accessToken", accessToken, cookieOptions)
+    .cookie("refreshToken", refreshToken, cookieOptions)
+    .json(new ApiResponse(200, {
+      user: userData,
+      // Optionally still return tokens if needed by frontend
+      tokens: {
+        accessToken,
+        refreshToken
+      }
+    }, "Login successful"));
 });
 
 const logoutUser = asyncHandler(async(req,res)=>{

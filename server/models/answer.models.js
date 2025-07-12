@@ -7,6 +7,8 @@ const answerSchema = new mongoose.Schema({
   author:        { type: Schema.Types.ObjectId, ref: "User", required: true },
   votes:       { type: Number, default: 0 },
   isAccepted:  { type: Boolean, default: false },
+  upvotes: [{ type: Schema.Types.ObjectId, ref: "User"}],
+  downvotes: [{ type: Schema.Types.ObjectId, ref: "User"}],
 }, { timestamps: true });
 
 export const Answer = mongoose.model("Answer", answerSchema)

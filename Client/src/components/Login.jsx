@@ -1,12 +1,13 @@
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import apiService from '../services/api';
+import { useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 
 const Login = () => {
   const [formData, setFormData] = useState({
     username: '',
     password: ''
   });
+
+  console.log(formData.username);
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
@@ -17,7 +18,6 @@ const Login = () => {
       ...prev,
       [name]: value
     }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({
         ...prev,
@@ -53,20 +53,42 @@ const Login = () => {
     setIsLoading(true);
     
     try {
-      const response = await apiService.login(formData);
-      
-      // Check if login was successful
-      if (response.success) {
-        setIsLoading(false);
-        navigate('/dashboard');
-      } else {
-        setIsLoading(false);
-        setErrors({ submit: response.message || 'Login failed. Please try again.' });
+      const response = await fetch('http://localhost:8000/api/v1/users/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          username: formData.username,
+          password: formData.password
+        }),
+        credentials: 'include' // if using cookies
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Login failed');
       }
+
+      // Store token if using JWT
+      if (data.token) {
+        localStorage.setItem('token', data.token);
+      }
+
+      // Store user data if needed
+      if (data.user) {
+        localStorage.setItem('user', JSON.stringify(data.user));
+      }
+
+      setIsLoading(false);
+      navigate('/dashboard');
       
     } catch (error) {
       setIsLoading(false);
-      setErrors({ submit: error.message || 'Login failed. Please try again.' });
+      setErrors({ 
+        submit: error.message || 'Login failed. Please try again.' 
+      });
     }
   };
 

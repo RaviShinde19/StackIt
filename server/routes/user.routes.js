@@ -6,6 +6,8 @@ import {
 } from "../controllers/user.controller.js"
 import { upload } from "../middlewares/upload.middleware.js"
 import { verifyJWT } from "../middlewares/auth.middlewares.js"
+// import multer from 'multer';
+// const upload = multer();
 
 
 const router = Router()

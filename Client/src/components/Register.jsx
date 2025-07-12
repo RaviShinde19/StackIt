@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import apiService from '../services/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -84,57 +83,66 @@ const Register = () => {
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    if (!validateForm()) return;
-    
-    setIsLoading(true);
-    
-    try {
-      const userData = {
-        firstname: formData.firstname,
-        lastname: formData.lastname,
-        username: formData.username,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
-        profilePic: formData.profilePic,
-        isTermsAccepted: formData.isTermsAccepted
-      };
-      
-      const response = await apiService.register(userData);
-      
-      // Check if registration was successful
-      if (response.success) {
-        setIsLoading(false);
-        // Redirect to login page with success message
-        navigate('/login', { 
-          state: { message: 'Registration successful! Please sign in.' }
-        });
-      } else {
-        setIsLoading(false);
-        setErrors({ submit: response.message || 'Registration failed. Please try again.' });
-      }
-      
-    } catch (error) {
-      setIsLoading(false);
-      
-      // Handle specific error messages
-      const errorMessage = error.message || 'Registration failed. Please try again.';
-      
-      // Set field-specific errors based on server response
-      if (errorMessage.includes('email already exists')) {
-        setErrors({ email: 'This email is already registered. Please use a different email.' });
-      } else if (errorMessage.includes('phone number already exists')) {
-        setErrors({ phone: 'This phone number is already registered. Please use a different phone number.' });
-      } else if (errorMessage.includes('username already exists')) {
-        setErrors({ username: 'This username is already taken. Please choose a different username.' });
-      } else {
-        setErrors({ submit: errorMessage });
-      }
+const handleSubmit = async (e) => {
+  e.preventDefault();
+
+  if (!validateForm()) return;
+
+  setIsLoading(true);
+
+  try {
+    const formDataToSend = new FormData();
+    formDataToSend.append('firstname', formData.firstname);
+    formDataToSend.append('lastname', formData.lastname);
+    formDataToSend.append('username', formData.username);
+    formDataToSend.append('email', formData.email);
+    formDataToSend.append('password', formData.password);
+    formDataToSend.append('phone', formData.phone);
+    formDataToSend.append('isTermsAccepted', formData.isTermsAccepted ? "true" : "false");
+
+    if (formData.profilePic) {
+      formDataToSend.append('profilePic', formData.profilePic);
     }
-  };
+
+    const response = await fetch('http://localhost:8000/api/v1/users/register', {
+      method: 'POST',
+      body: formDataToSend,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.message || 'Registration failed');
+    }
+
+    // ✅ Get the profilePicUrl from backend response
+    const profilePicUrl = result?.user?.profilePicUrl;
+
+    console.log('Uploaded profile pic URL:', profilePicUrl); // ✅ You can now store this if needed
+
+    setIsLoading(false);
+
+    navigate('/login', {
+      state: {
+        message: 'Registration successful! Please sign in.',
+        status: 'success',
+      },
+    });
+  } catch (error) {
+    setIsLoading(false);
+    const errorMessage = error.message || 'Registration failed. Please try again.';
+
+    if (errorMessage.includes('email')) {
+      setErrors({ email: 'This email is already registered.' });
+    } else if (errorMessage.includes('phone')) {
+      setErrors({ phone: 'This phone number is already registered.' });
+    } else if (errorMessage.includes('required')) {
+      setErrors({ submit: 'All fields are required' });
+    } else {
+      setErrors({ submit: errorMessage });
+    }
+  }
+};
 
   return (
     <div className="min-h-screen bg-gray-50 font-inter">
@@ -162,7 +170,7 @@ const Register = () => {
             <p className="text-gray-600">Join our community and start asking questions</p>
           </div>
           
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-6" encType="multipart/form-data">
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label htmlFor="firstname" className="block text-sm font-semibold text-gray-700 mb-2">
@@ -276,42 +284,6 @@ const Register = () => {
             </div>
 
             <div>
-              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
-                Phone Number
-              </label>
-              <input
-                type="tel"
-                id="phone"
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
-                  errors.phone ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-                }`}
-                placeholder="Enter your phone number"
-                required
-              />
-              {errors.phone && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.phone}</span>}
-            </div>
-
-            <div>
-              <label htmlFor="profilePic" className="block text-sm font-semibold text-gray-700 mb-2">
-                Profile Picture (Optional)
-              </label>
-              <input
-                type="file"
-                id="profilePic"
-                name="profilePic"
-                onChange={handleChange}
-                accept="image/*"
-                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
-                  errors.profilePic ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-                }`}
-              />
-              {errors.profilePic && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.profilePic}</span>}
-            </div>
-
-            <div>
               <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
                 Password
               </label>
@@ -327,6 +299,15 @@ const Register = () => {
                 placeholder="Create a strong password"
                 required
               />
+              <div className="mt-1 text-xs text-gray-500">
+                Password must contain:
+                <ul className="list-disc list-inside">
+                  <li className={formData.password.length >= 8 ? 'text-green-500' : ''}>At least 8 characters</li>
+                  <li className={/[A-Z]/.test(formData.password) ? 'text-green-500' : ''}>One uppercase letter</li>
+                  <li className={/[a-z]/.test(formData.password) ? 'text-green-500' : ''}>One lowercase letter</li>
+                  <li className={/\d/.test(formData.password) ? 'text-green-500' : ''}>One number</li>
+                </ul>
+              </div>
               {errors.password && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.password}</span>}
             </div>
 
@@ -372,37 +353,41 @@ const Register = () => {
             </div>
             {errors.isTermsAccepted && <span className="text-red-500 text-sm font-medium">{errors.isTermsAccepted}</span>}
 
-          {errors.submit && <div className="text-red-500 text-sm font-medium">{errors.submit}</div>}
-
-          <button 
-            type="submit" 
-            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg text-base font-semibold transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none relative"
-            disabled={isLoading}
-          >
-            {isLoading ? (
-              <>
-                <span className="opacity-0">Creating Account...</span>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
-                </div>
-              </>
-            ) : (
-              'Create Account'
+            {errors.submit && (
+              <div className="p-3 bg-red-50 text-red-700 rounded-lg text-sm">
+                {errors.submit}
+              </div>
             )}
-          </button>
-        </form>
 
-        <div className="text-center mt-8 pt-6 border-t border-gray-200">
-          <p className="text-sm text-gray-600">
-            Already have an account?{' '}
-            <Link to="/login" className="text-blue-600 hover:text-blue-800 font-medium hover:underline">
-              Sign in
-            </Link>
-          </p>
+            <button 
+              type="submit" 
+              className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg text-base font-semibold transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none relative"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <span className="opacity-0">Creating Account...</span>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                  </div>
+                </>
+              ) : (
+                'Create Account'
+              )}
+            </button>
+          </form>
+
+          <div className="text-center mt-8 pt-6 border-t border-gray-200">
+            <p className="text-sm text-gray-600">
+              Already have an account?{' '}
+              <Link to="/login" className="text-blue-600 hover:text-blue-800 font-medium hover:underline">
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
-      </div>
-    </main>
-  </div>
+      </main>
+    </div>
   );
 };
 
