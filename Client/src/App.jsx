@@ -3,6 +3,7 @@ import Login from './components/Login'
 import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 import AskQuestion from './components/AskQuestion'
+import React from 'react';
 
 function App() {
   return (
