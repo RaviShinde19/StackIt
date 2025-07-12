@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
 import { XMarkIcon } from '@heroicons/react/24/outline'
+import SimpleRichTextEditor from './SimpleRichTextEditor'
 
 const AskQuestion = () => {
   const [formData, setFormData] = useState({
@@ -185,15 +186,11 @@ const AskQuestion = () => {
                 Provide all the details someone would need to understand and answer your question
               </p>
               
-              <textarea
-                name="description"
-                value={formData.description}
-                onChange={handleChange}
+              <SimpleRichTextEditor
+                content={formData.description}
+                onChange={(content) => setFormData(prev => ({ ...prev, description: content }))}
                 placeholder="Describe your question in detail..."
-                rows={12}
-                className={`w-full p-4 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none ${
-                  errors.description ? 'border-red-500' : 'border-gray-300'
-                }`}
+                className={`min-h-[300px] ${errors.description ? 'border-red-500' : ''}`}
               />
               
               {errors.description && (
