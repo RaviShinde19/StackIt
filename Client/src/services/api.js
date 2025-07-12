@@ -1,5 +1,5 @@
 // API configuration and helper functions
-const API_BASE_URL = 'http://localhost:5000/api'; // Change this to your backend URL
+const API_BASE_URL = 'http://localhost:8000/api/v1'; // Change this to your backend URL
 
 // API helper class
 class ApiService {
@@ -44,6 +44,11 @@ class ApiService {
         throw new Error(data.message || 'API request failed');
       }
 
+      // Handle server response format (ApiResponse)
+      if (data.success !== undefined) {
+        return data;
+      }
+
       return data;
     } catch (error) {
       console.error('API Request Error:', error);
@@ -53,21 +58,75 @@ class ApiService {
 
   // Authentication methods
   async register(userData) {
-    return this.request('/auth/register', {
+    // Always use FormData since the server route expects it (upload.single middleware)
+    const formData = new FormData();
+    formData.append('firstname', userData.firstname);
+    formData.append('lastname', userData.lastname);
+    formData.append('username', userData.username);
+    formData.append('email', userData.email);
+    formData.append('password', userData.password);
+    formData.append('phone', userData.phone);
+    // Convert boolean to string for FormData, server will handle conversion
+    formData.append('isTermsAccepted', userData.isTermsAccepted ? 'true' : 'false');
+
+    // Handle file upload if provided
+    if (userData.profilePic) {
+      formData.append('profilePic', userData.profilePic);
+    }
+
+    const url = `${this.baseURL}/users/register`;
+    const token = this.getAuthToken();
+
+    const config = {
       method: 'POST',
-      body: JSON.stringify(userData),
-    });
+      headers: {
+        ...(token && { Authorization: `Bearer ${token}` }),
+        // Don't set Content-Type for FormData, let browser set it
+      },
+      body: formData,
+    };
+
+    try {
+      const response = await fetch(url, config);
+      
+      if (!response.ok) {
+        let errorMessage = 'Registration failed';
+        try {
+          const errorData = await response.json();
+          errorMessage = errorData.message || errorMessage;
+        } catch (jsonError) {
+          // If response is not JSON (like HTML error page), use status text
+          errorMessage = `${response.status} - ${response.statusText}`;
+        }
+        throw new Error(errorMessage);
+      }
+
+      const data = await response.json();
+      return data;
+    } catch (error) {
+      console.error('Registration Error:', error);
+      throw error;
+    }
   }
 
   async login(credentials) {
-    const response = await this.request('/auth/login', {
+    // Transform client data to match server expectations
+    const serverData = {
+      username: credentials.username || credentials.email, // Use username or email as fallback
+      password: credentials.password
+    };
+
+    const response = await this.request('/users/login', {
       method: 'POST',
-      body: JSON.stringify(credentials),
+      body: JSON.stringify(serverData),
     });
 
-    // Store token if login successful
-    if (response.token) {
-      this.setAuthToken(response.token);
+    // Store tokens if login successful
+    if (response.success && response.data.accessToken) {
+      this.setAuthToken(response.data.accessToken);
+      if (response.data.refreshToken) {
+        localStorage.setItem('refreshToken', response.data.refreshToken);
+      }
     }
 
     return response;
@@ -75,13 +134,14 @@ class ApiService {
 
   async logout() {
     try {
-      await this.request('/auth/logout', {
+      await this.request('/users/logout', {
         method: 'POST',
       });
     } catch (error) {
       console.error('Logout error:', error);
     } finally {
       this.removeAuthToken();
+      localStorage.removeItem('refreshToken');
     }
   }
 
@@ -170,11 +230,10 @@ class ApiService {
     try {
       const payload = JSON.parse(atob(token.split('.')[1]));
       return {
-        id: payload.id,
+        id: payload._id,
         email: payload.email,
-        firstName: payload.firstName,
-        lastName: payload.lastName,
-        role: payload.role,
+        username: payload.username,
+        userType: payload.userType,
       };
     } catch (error) {
       console.error('Token parsing error:', error);

@@ -41,7 +41,7 @@ const registerUser = asyncHandler(async (req,res) => {
         profilePicUrl = cloudinaryResult.secure_url;
     }
 
-    const newuser = await User.create({
+const newuser = await User.create({
         firstname,
         lastname,
         username,
@@ -106,5 +106,5 @@ const logoutUser = asyncHandler(async(req,res)=>{
 export {
     registerUser,
     loginUser,
-    logoutUser
+    logoutUser
 }

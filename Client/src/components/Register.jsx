@@ -4,23 +4,25 @@ import apiService from '../services/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
-    firstName: '',
-    lastName: '',
+    firstname: '',
+    lastname: '',
+    username: '',
     email: '',
     password: '',
     confirmPassword: '',
-    phoneNumber: '',
-    acceptTerms: false
+    phone: '',
+    profilePic: null,
+    isTermsAccepted: false
   });
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
+    const { name, value, type, checked, files } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: type === 'checkbox' ? checked : value
+      [name]: type === 'checkbox' ? checked : type === 'file' ? files[0] : value
     }));
     // Clear error when user starts typing
     if (errors[name]) {
@@ -34,12 +36,18 @@ const Register = () => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.firstName.trim()) {
-      newErrors.firstName = 'First name is required';
+    if (!formData.firstname.trim()) {
+      newErrors.firstname = 'First name is required';
     }
     
-    if (!formData.lastName.trim()) {
-      newErrors.lastName = 'Last name is required';
+    if (!formData.lastname.trim()) {
+      newErrors.lastname = 'Last name is required';
+    }
+    
+    if (!formData.username.trim()) {
+      newErrors.username = 'Username is required';
+    } else if (formData.username.length < 3) {
+      newErrors.username = 'Username must be at least 3 characters';
     }
     
     if (!formData.email) {
@@ -62,12 +70,14 @@ const Register = () => {
       newErrors.confirmPassword = 'Passwords do not match';
     }
     
-    if (formData.phoneNumber && !/^\+?[\d\s-()]{10,}$/.test(formData.phoneNumber)) {
-      newErrors.phoneNumber = 'Please enter a valid phone number';
+    if (!formData.phone) {
+      newErrors.phone = 'Phone number is required';
+    } else if (!/^\+?[\d\s-()]{10,}$/.test(formData.phone)) {
+      newErrors.phone = 'Please enter a valid phone number';
     }
     
-    if (!formData.acceptTerms) {
-      newErrors.acceptTerms = 'You must accept the terms and conditions';
+    if (!formData.isTermsAccepted) {
+      newErrors.isTermsAccepted = 'You must accept the terms and conditions';
     }
     
     setErrors(newErrors);
@@ -83,179 +93,290 @@ const Register = () => {
     
     try {
       const userData = {
-        firstName: formData.firstName,
-        lastName: formData.lastName,
+        firstname: formData.firstname,
+        lastname: formData.lastname,
+        username: formData.username,
         email: formData.email,
         password: formData.password,
-        phoneNumber: formData.phoneNumber || null,
+        phone: formData.phone,
+        profilePic: formData.profilePic,
+        isTermsAccepted: formData.isTermsAccepted
       };
       
-      await apiService.register(userData);
+      const response = await apiService.register(userData);
       
-      setIsLoading(false);
-      // Redirect to login page with success message
-      navigate('/login', { 
-        state: { message: 'Registration successful! Please sign in.' }
-      });
+      // Check if registration was successful
+      if (response.success) {
+        setIsLoading(false);
+        // Redirect to login page with success message
+        navigate('/login', { 
+          state: { message: 'Registration successful! Please sign in.' }
+        });
+      } else {
+        setIsLoading(false);
+        setErrors({ submit: response.message || 'Registration failed. Please try again.' });
+      }
       
     } catch (error) {
       setIsLoading(false);
-      setErrors({ submit: error.message || 'Registration failed. Please try again.' });
+      
+      // Handle specific error messages
+      const errorMessage = error.message || 'Registration failed. Please try again.';
+      
+      // Set field-specific errors based on server response
+      if (errorMessage.includes('email already exists')) {
+        setErrors({ email: 'This email is already registered. Please use a different email.' });
+      } else if (errorMessage.includes('phone number already exists')) {
+        setErrors({ phone: 'This phone number is already registered. Please use a different phone number.' });
+      } else if (errorMessage.includes('username already exists')) {
+        setErrors({ username: 'This username is already taken. Please choose a different username.' });
+      } else {
+        setErrors({ submit: errorMessage });
+      }
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-purple-600 via-blue-600 to-purple-800 p-5">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-8 animate-slide-up">
-        <div className="text-center mb-8">
-          <h2 className="text-gray-900 text-3xl font-bold mb-2">Create Account</h2>
-          <p className="text-gray-600">Join us today and get started</p>
+    <div className="min-h-screen bg-gray-50 font-inter">
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 shadow-sm">
+        <div className="max-w-6xl mx-auto px-4 sm:px-6">
+          <div className="flex justify-between items-center h-16">
+            <Link to="/" className="text-2xl font-bold text-gray-900 tracking-tight">
+              Stack<span className="text-blue-600">It</span>
+            </Link>
+            <Link
+              to="/login"
+              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-medium transition-colors duration-200 shadow-md hover:shadow-lg"
+            >
+              Login
+            </Link>
+          </div>
         </div>
-        
-        <form onSubmit={handleSubmit} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label htmlFor="firstName" className="block text-sm font-semibold text-gray-700 mb-2">
-                First Name
-              </label>
-              <input
-                type="text"
-                id="firstName"
-                name="firstName"
-                value={formData.firstName}
-                onChange={handleChange}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 ${
-                  errors.firstName ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-                }`}
-                placeholder="Enter your first name"
-                required
-              />
-              {errors.firstName && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.firstName}</span>}
+      </header>
+
+      <main className="max-w-md mx-auto px-4 py-16">
+        <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <div className="text-center mb-8">
+            <h2 className="text-gray-900 text-3xl font-bold mb-2">Create Account</h2>
+            <p className="text-gray-600">Join our community and start asking questions</p>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label htmlFor="firstname" className="block text-sm font-semibold text-gray-700 mb-2">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  id="firstname"
+                  name="firstname"
+                  value={formData.firstname}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                    errors.firstname ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                  }`}
+                  placeholder="Enter your first name"
+                  required
+                />
+                {errors.firstname && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.firstname}</span>}
+              </div>
+
+              <div>
+                <label htmlFor="lastname" className="block text-sm font-semibold text-gray-700 mb-2">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  id="lastname"
+                  name="lastname"
+                  value={formData.lastname}
+                  onChange={handleChange}
+                  className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                    errors.lastname ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                  }`}
+                  placeholder="Enter your last name"
+                  required
+                />
+                {errors.lastname && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.lastname}</span>}
+              </div>
             </div>
 
             <div>
-              <label htmlFor="lastName" className="block text-sm font-semibold text-gray-700 mb-2">
-                Last Name
+              <label htmlFor="username" className="block text-sm font-semibold text-gray-700 mb-2">
+                Username
               </label>
               <input
                 type="text"
-                id="lastName"
-                name="lastName"
-                value={formData.lastName}
+                id="username"
+                name="username"
+                value={formData.username}
                 onChange={handleChange}
-                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 ${
-                  errors.lastName ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                  errors.username ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
                 }`}
-                placeholder="Enter your last name"
+                placeholder="Choose a unique username"
                 required
               />
-              {errors.lastName && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.lastName}</span>}
+              {errors.username && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.username}</span>}
             </div>
-          </div>
 
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
-              Email Address
-            </label>
-            <input
-              type="email"
-              id="email"
-              name="email"
-              value={formData.email}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 ${
-                errors.email ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-              }`}
-              placeholder="Enter your email"
-              required
-            />
-            {errors.email && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.email}</span>}
-          </div>
+            <div>
+              <label htmlFor="email" className="block text-sm font-semibold text-gray-700 mb-2">
+                Email Address
+              </label>
+              <input
+                type="email"
+                id="email"
+                name="email"
+                value={formData.email}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                  errors.email ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                }`}
+                placeholder="Enter your email"
+                required
+              />
+              {errors.email && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.email}</span>}
+            </div>
 
-          <div>
-            <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-700 mb-2">
-              Phone Number (Optional)
-            </label>
-            <input
-              type="tel"
-              id="phoneNumber"
-              name="phoneNumber"
-              value={formData.phoneNumber}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 ${
-                errors.phoneNumber ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-              }`}
-              placeholder="Enter your phone number"
-            />
-            {errors.phoneNumber && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.phoneNumber}</span>}
-          </div>
+            <div>
+              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                  errors.phone ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                }`}
+                placeholder="Enter your phone number"
+                required
+              />
+              {errors.phone && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.phone}</span>}
+            </div>
 
-          <div>
-            <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
-              Password
-            </label>
-            <input
-              type="password"
-              id="password"
-              name="password"
-              value={formData.password}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 ${
-                errors.password ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-              }`}
-              placeholder="Create a strong password"
-              required
-            />
-            {errors.password && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.password}</span>}
-          </div>
+            <div>
+              <label htmlFor="profilePic" className="block text-sm font-semibold text-gray-700 mb-2">
+                Profile Picture (Optional)
+              </label>
+              <input
+                type="file"
+                id="profilePic"
+                name="profilePic"
+                onChange={handleChange}
+                accept="image/*"
+                className="w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 border-gray-200"
+              />
+              <p className="text-xs text-gray-500 mt-1">Upload a profile picture (JPG, PNG, WebP)</p>
+            </div>
 
-          <div>
-            <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
-              Confirm Password
-            </label>
-            <input
-              type="password"
-              id="confirmPassword"
-              name="confirmPassword"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-purple-500 focus:ring-2 focus:ring-purple-200 ${
-                errors.confirmPassword ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
-              }`}
-              placeholder="Confirm your password"
-              required
-            />
-            {errors.confirmPassword && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.confirmPassword}</span>}
-          </div>
+            <div>
+              <label htmlFor="phone" className="block text-sm font-semibold text-gray-700 mb-2">
+                Phone Number
+              </label>
+              <input
+                type="tel"
+                id="phone"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                  errors.phone ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                }`}
+                placeholder="Enter your phone number"
+                required
+              />
+              {errors.phone && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.phone}</span>}
+            </div>
 
-          <div>
-            <label className="flex items-start cursor-pointer">
+            <div>
+              <label htmlFor="profilePic" className="block text-sm font-semibold text-gray-700 mb-2">
+                Profile Picture (Optional)
+              </label>
+              <input
+                type="file"
+                id="profilePic"
+                name="profilePic"
+                onChange={handleChange}
+                accept="image/*"
+                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                  errors.profilePic ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                }`}
+              />
+              {errors.profilePic && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.profilePic}</span>}
+            </div>
+
+            <div>
+              <label htmlFor="password" className="block text-sm font-semibold text-gray-700 mb-2">
+                Password
+              </label>
+              <input
+                type="password"
+                id="password"
+                name="password"
+                value={formData.password}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                  errors.password ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                }`}
+                placeholder="Create a strong password"
+                required
+              />
+              {errors.password && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.password}</span>}
+            </div>
+
+            <div>
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-700 mb-2">
+                Confirm Password
+              </label>
+              <input
+                type="password"
+                id="confirmPassword"
+                name="confirmPassword"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                className={`w-full px-4 py-3 border-2 rounded-lg text-base transition-all duration-300 bg-gray-50 focus:outline-none focus:bg-white focus:border-blue-500 focus:ring-2 focus:ring-blue-200 ${
+                  errors.confirmPassword ? 'border-red-500 bg-red-50 focus:border-red-500 focus:ring-red-200' : 'border-gray-200'
+                }`}
+                placeholder="Confirm your password"
+                required
+              />
+              {errors.confirmPassword && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.confirmPassword}</span>}
+            </div>
+
+            <div className="flex items-start space-x-3">
               <input
                 type="checkbox"
-                name="acceptTerms"
-                checked={formData.acceptTerms}
+                id="isTermsAccepted"
+                name="isTermsAccepted"
+                checked={formData.isTermsAccepted}
                 onChange={handleChange}
-                className={`w-4 h-4 mr-3 mt-1 cursor-pointer ${errors.acceptTerms ? 'border-red-500' : ''}`}
+                className="mt-1 h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                required
               />
-              <span className="text-sm text-gray-700">
+              <label htmlFor="isTermsAccepted" className="text-sm text-gray-700">
                 I agree to the{' '}
-                <Link to="/terms" className="text-purple-600 hover:text-purple-800 font-semibold hover:underline">
-                  Terms of Service
-                </Link>
-                {' '}and{' '}
-                <Link to="/privacy" className="text-purple-600 hover:text-purple-800 font-semibold hover:underline">
+                <a href="#" className="text-blue-600 hover:text-blue-800 hover:underline">
+                  Terms and Conditions
+                </a>{' '}
+                and{' '}
+                <a href="#" className="text-blue-600 hover:text-blue-800 hover:underline">
                   Privacy Policy
-                </Link>
-              </span>
-            </label>
-            {errors.acceptTerms && <span className="text-red-500 text-sm mt-1 block font-medium">{errors.acceptTerms}</span>}
-          </div>
+                </a>
+              </label>
+            </div>
+            {errors.isTermsAccepted && <span className="text-red-500 text-sm font-medium">{errors.isTermsAccepted}</span>}
 
           {errors.submit && <div className="text-red-500 text-sm font-medium">{errors.submit}</div>}
 
           <button 
             type="submit" 
-            className="w-full bg-gradient-to-r from-purple-600 to-blue-600 text-white py-3 px-6 rounded-lg text-base font-semibold transition-all duration-300 hover:from-purple-700 hover:to-blue-700 hover:shadow-lg hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none relative"
+            className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg text-base font-semibold transition-all duration-300 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-1 disabled:opacity-70 disabled:cursor-not-allowed disabled:transform-none disabled:shadow-none relative"
             disabled={isLoading}
           >
             {isLoading ? (
@@ -274,13 +395,14 @@ const Register = () => {
         <div className="text-center mt-8 pt-6 border-t border-gray-200">
           <p className="text-sm text-gray-600">
             Already have an account?{' '}
-            <Link to="/login" className="text-purple-600 hover:text-purple-800 font-semibold hover:underline">
+            <Link to="/login" className="text-blue-600 hover:text-blue-800 font-medium hover:underline">
               Sign in
             </Link>
           </p>
         </div>
       </div>
-    </div>
+    </main>
+  </div>
   );
 };
 
