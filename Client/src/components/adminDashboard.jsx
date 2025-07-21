@@ -31,99 +31,104 @@ const AdminPage = () => {
 
   // Mock data - replace with actual API calls
   const [stats, setStats] = useState({
-    totalUsers: 1247,
-    totalQuestions: 3891,
-    totalAnswers: 7542,
-    pendingReports: 23,
+    totalUsers: 3,
+    totalQuestions: 3,
+    totalAnswers: 1,
+    pendingReports: 2,
     todayActivity: {
-      newUsers: 15,
-      newQuestions: 42,
-      newAnswers: 87,
-      newReports: 8
+      newUsers: 1,
+      newQuestions: 3,
+      newAnswers: 1,
+      newReports: 2
     }
   });
 
   const [reportedContent, setReportedContent] = useState([
     {
-      id: 1,
+      _id: '68724969cd0e09ef8a45bfee',
       type: 'question',
-      title: 'How to hack into systems?',
-      content: 'I need to learn how to break into computer systems for malicious purposes...',
-      author: 'suspicious_user',
+      title: 'What is the recent statement of donald trump?',
+      description: '<p>Donald trump is going mad against iran</p>',
+      tags: ['World War'],
+      askedBy: '687229721bb23c3d1c7031e7',
+      author: 'mahesh1566',
       reportedBy: 'concerned_citizen',
       reason: 'Inappropriate content',
       severity: 'high',
       status: 'pending',
-      createdAt: '2024-01-15T10:30:00Z',
-      reportedAt: '2024-01-15T11:00:00Z'
+      createdAt: '2025-07-12T11:39:21.161Z',
+      reportedAt: '2025-07-12T11:40:00.000Z'
     },
     {
-      id: 2,
+      _id: '68724775cd0e09ef8a45bef9',
       type: 'answer',
-      title: 'Answer to "Best coding practices"',
-      content: 'This is spam content with links to malicious websites...',
-      author: 'spammer123',
+      title: 'Answer to "How to implement JWT authentication in React?"',
+      content: '<p>This is how closure works in JavaScript...</p>',
+      question: '6872028f4a32a1f1d5e1ecab',
+      author: 'mahesh1566',
       reportedBy: 'moderator_user',
       reason: 'Spam',
       severity: 'medium',
       status: 'pending',
-      createdAt: '2024-01-14T15:45:00Z',
-      reportedAt: '2024-01-14T16:00:00Z'
+      createdAt: '2025-07-12T11:31:01.809Z',
+      reportedAt: '2025-07-12T11:32:00.000Z'
     },
     {
-      id: 3,
+      _id: '6872028f4a32a1f1d5e1ecab',
       type: 'question',
-      title: 'Offensive language in discussion',
-      content: 'Contains inappropriate language and harassment...',
-      author: 'toxic_user',
+      title: 'Explain the current war situation between israel and iran',
+      description: '<p>As of mid-2025, the situation between Israel and Iran is characterized by escalating tensions...</p>',
+      tags: ['World War'],
+      askedBy: '687229721bb23c3d1c7031e7',
+      author: 'mahesh1566',
       reportedBy: 'victim_user',
       reason: 'Harassment',
       severity: 'high',
       status: 'under_review',
-      createdAt: '2024-01-13T09:20:00Z',
-      reportedAt: '2024-01-13T10:00:00Z'
+      createdAt: '2025-07-12T10:20:00.000Z',
+      reportedAt: '2025-07-12T10:25:00.000Z'
     }
   ]);
 
   const [users, setUsers] = useState([
     {
-      id: 1,
-      username: 'john_doe',
-      email: 'john@example.com',
+      _id: '687229721bb23c3d1c7031e7',
+      username: 'mahesh1566',
+      email: 'mahesh@example.com',
       role: 'user',
       status: 'active',
-      joinedAt: '2024-01-01T00:00:00Z',
-      lastActive: '2024-01-15T10:30:00Z',
-      questionsCount: 15,
-      answersCount: 32,
+      createdAt: '2025-01-01T00:00:00Z',
+      lastActive: '2025-07-12T11:39:21.161Z',
+      questionsCount: 3,
+      answersCount: 1,
       reputation: 245,
       warningsCount: 0
     },
     {
-      id: 2,
-      username: 'suspicious_user',
-      email: 'suspicious@example.com',
+      _id: '687229721bb23c3d1c7031e8',
+      username: 'concerned_citizen',
+      email: 'concerned@example.com',
       role: 'user',
-      status: 'flagged',
-      joinedAt: '2024-01-10T00:00:00Z',
-      lastActive: '2024-01-15T08:00:00Z',
+      status: 'active',
+      createdAt: '2025-01-10T00:00:00Z',
+      lastActive: '2025-07-12T08:00:00Z',
       questionsCount: 5,
-      answersCount: 2,
-      reputation: -15,
-      warningsCount: 3
+      answersCount: 12,
+      reputation: 156,
+      warningsCount: 0
     },
     {
-      id: 3,
-      username: 'spammer123',
-      email: 'spam@example.com',
-      role: 'user',
-      status: 'suspended',
-      joinedAt: '2024-01-12T00:00:00Z',
-      lastActive: '2024-01-14T12:00:00Z',
-      questionsCount: 20,
-      answersCount: 1,
-      reputation: -50,
-      warningsCount: 5
+      _id: '687229721bb23c3d1c7031e9',
+      username: 'moderator_user',
+      email: 'moderator@example.com',
+      role: 'moderator',
+      status: 'active',
+      createdAt: '2025-01-05T00:00:00Z',
+      lastActive: '2025-07-12T12:00:00Z',
+      questionsCount: 2,
+      answersCount: 25,
+      reputation: 890,
+      warningsCount: 0
     }
   ]);
 
@@ -143,7 +148,7 @@ const AdminPage = () => {
       setSelectedItems(new Set());
       setShowBulkActions(false);
     } else {
-      setSelectedItems(new Set(items.map(item => item.id)));
+      setSelectedItems(new Set(items.map(item => item._id)));
       setShowBulkActions(true);
     }
   };
@@ -151,7 +156,7 @@ const AdminPage = () => {
   const handleApproveContent = (id) => {
     setReportedContent(prev => 
       prev.map(item => 
-        item.id === id ? { ...item, status: 'approved' } : item
+        item._id === id ? { ...item, status: 'approved' } : item
       )
     );
   };
@@ -159,19 +164,19 @@ const AdminPage = () => {
   const handleRejectContent = (id) => {
     setReportedContent(prev => 
       prev.map(item => 
-        item.id === id ? { ...item, status: 'rejected' } : item
+        item._id === id ? { ...item, status: 'rejected' } : item
       )
     );
   };
 
   const handleDeleteContent = (id) => {
-    setReportedContent(prev => prev.filter(item => item.id !== id));
+    setReportedContent(prev => prev.filter(item => item._id !== id));
   };
 
   const handleUserAction = (userId, action) => {
     setUsers(prev => 
       prev.map(user => {
-        if (user.id === userId) {
+        if (user._id === userId) {
           switch (action) {
             case 'suspend':
               return { ...user, status: 'suspended' };
@@ -191,7 +196,7 @@ const AdminPage = () => {
   };
 
   const handleDeleteUser = (userId) => {
-    setUsers(prev => prev.filter(user => user.id !== userId));
+    setUsers(prev => prev.filter(user => user._id !== userId));
   };
 
   const handleBulkAction = (action) => {
@@ -446,9 +451,4 @@ const AdminPage = () => {
             <p className="text-sm text-blue-700 mb-3">{selectedItems.size} items selected</p>
             <div className="flex gap-2">
               <button
-                onClick={() => handleBulkAction('approve')}
-                className="px-3 py-1 bg-green-600 text-white text-sm rounded hover:bg-green-700 transition-colors"
-              >
-                Approve
-              </button>
-              <button></button>
+                onClick={
