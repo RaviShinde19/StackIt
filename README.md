@@ -1,8 +1,5 @@
 Problem Statement: StackIt – A Minimal Q&A Forum Platform
-Team Name: Team Electro_Coders
-email: maheshkakad06@gmail.com
-vedantpatil1602@gmail.com
-shrinivasloni21@gmail.com
+email: shinderavi1905@gmail.com 
 
 # StackIt - Q&A Forum Platform
 
@@ -13,8 +10,6 @@ shrinivasloni21@gmail.com
 [![Tailwind CSS](https://img.shields.io/badge/Tailwind%20CSS-3.4.17-blue.svg)](https://tailwindcss.com/)
 [![License](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 
-**Team Name:** Team Electro_Coders  
-**Contact:** maheshkakad06@gmail.com, vedantpatil1602@gmail.com, shrinivasloni21@gmail.com
 
 A modern, full-stack Q&A forum platform built with React, Node.js, Express, and MongoDB. StackIt provides a seamless experience for asking questions, sharing knowledge, and building communities around various topics.
 
@@ -155,7 +150,7 @@ StackIt/
 
 1. **Clone the repository**
    ```bash
-   git clone https://github.com/maheshkakad9/OdooHackathon-StackIt.git
+   git clone https://github.com/RaviShinde19/StackIt.git
    cd OdooHackathon-StackIt
    ```
 
@@ -407,7 +402,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Email**: support@stackit.com
 - **Documentation**: [docs.stackit.com](https://docs.stackit.com)
 - **Discord**: [Join our community](https://discord.gg/stackit)
-- **GitHub Issues**: [Report bugs](https://github.com/maheshkakad9/OdooHackathon-StackIt/issues)
+- **GitHub Issues**: [Report bugs](https://github.com/RaviShinde19/StackIt)
 
 ## 🗺️ Roadmap
 
